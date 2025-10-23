@@ -45,6 +45,7 @@ public class EssentialsSpawn extends JavaPlugin implements IEssentialsSpawn {
         if (respawnPriority != null) {
             pluginManager.registerEvent(PlayerRespawnEvent.class, playerListener, respawnPriority, (ll, event) ->
                 ((EssentialsSpawnPlayerListener) ll).onPlayerRespawn((PlayerRespawnEvent) event), this);
+            getWrappedLogger().info("Player respawn priority set to: " + respawnPriority);
         }
 
         final EventPriority joinPriority = ess.getSettings().getSpawnJoinPriority();

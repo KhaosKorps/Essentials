@@ -9,6 +9,8 @@ import com.earth2me.essentials.utils.VersionUtil;
 import net.ess3.api.IEssentials;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -33,7 +35,8 @@ class EssentialsSpawnPlayerListener implements Listener {
         this.ess = ess;
         this.spawns = spawns;
     }
-
+    
+    @EventHandler(priority = EventPriority.LOWEST)
     void onPlayerRespawn(final PlayerRespawnEvent event) {
         final User user = ess.getUser(event.getPlayer());
 
@@ -175,6 +178,31 @@ class EssentialsSpawnPlayerListener implements Listener {
             final CompletableFuture<Boolean> future = new CompletableFuture<>();
             user.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.PLUGIN, future);
         });
+        return true;
+    }
+    
+    private boolean tryRandomTeleport(final User user, final String name, final PlayerRespawnEvent event) {
+        // Only proceed if a random spawn is configured
+        if (!ess.getRandomTeleport().hasLocation(name)) {
+            return false;
+        }
+        
+        // Get the current respawn location from the event
+        Location current = event.getRespawnLocation();
+        Location worldSpawn = event.getPlayer().getWorld().getSpawnLocation();
+        
+        // ✅ Skip random teleport if Towny or another plugin already set a different spawn
+        if (!current.equals(worldSpawn)) {
+            // Something (like Towny or bed/anchor) already decided spawn
+            return false;
+        }
+        
+        // Otherwise, do the random teleport
+        ess.getRandomTeleport().getRandomLocation(name).thenAccept(location -> {
+            final CompletableFuture<Boolean> future = new CompletableFuture<>();
+            user.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.PLUGIN, future);
+        });
+        
         return true;
     }
 }
