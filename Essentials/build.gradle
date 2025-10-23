@@ -107,13 +107,19 @@ shadowJar {
 
 publishing {
     publications {
-        gpr(MavenPublication) {
+        maven(MavenPublication) {
             from components.java
             groupId = 'com.earth2me.essentials'
-            artifactId = 'essentials'
-            version = project.version
+            artifactId = 'essentials' // keep consistent with imports
+            version = '1.0.2' // bump version each time you publish
+
+            pom {
+                name.set("EssentialsX Fork")
+                description.set("Custom EssentialsX build for Towny integration")
+            }
         }
     }
+
     repositories {
         maven {
             name = 'GitHubPackages'
