@@ -27,27 +27,6 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-publishing {
-    publications {
-        gpr(MavenPublication) {
-            from components.java
-            groupId = 'com.khaoskorps.minecraft.essentials'
-            artifactId = 'essentials'
-            version = project.version
-        }
-    }
-    repositories {
-        maven {
-            name = 'GitHubPackages'
-            url = uri('https://maven.pkg.github.com/KhaosKorps/Essentials')
-            credentials {
-                username = project.findProperty('gpr.user') ?: System.getenv('GITHUB_ACTOR')
-                password = project.findProperty('gpr.key') ?: System.getenv('GITHUB_TOKEN')
-            }
-        }
-    }
-}
-
 subprojects {
     tasks.withType(Checkstyle).configureEach {
         enabled = false
