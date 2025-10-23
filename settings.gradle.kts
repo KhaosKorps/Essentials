@@ -22,11 +22,26 @@ dependencyResolutionManagement {
         maven("https://libraries.minecraft.net/") {
             content { includeGroup("com.mojang") }
         }
+        // ✅ Add this for your published artifact
+        maven("https://maven.pkg.github.com/KhaosKorps/Essentials") {
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
 }
 
 pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven("https://plugins.gradle.org/m2/")
+    }
+    plugins {
+        id("com.gradleup.shadow") version "8.3.0"
+    }
+
     includeBuild("build-logic")
 }
 

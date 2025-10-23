@@ -1,14 +1,58 @@
 plugins {
-    id("essentials.parent-build-logic")
+    id 'java-library'
+    id 'maven-publish'
 }
 
-group = "net.essentialsx"
-version = "2.22.0-SNAPSHOT"
+group = 'com.khaoskorps.minecraft.essentials'
+version = '1.0.0'
 
-project.ext {
-    GIT_COMMIT = !indraGit.isPresent() ? "unknown" : indraGit.commit().abbreviate(7).name()
-    GIT_DEPTH = GitUtil.commitsSinceLastTag(project)
-    GIT_BRANCH = GitUtil.headBranchName(project)
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+}
 
-    FULL_VERSION = "${version}".replace("-SNAPSHOT", "-dev+${GIT_DEPTH}-${GIT_COMMIT}")
+repositories {
+    mavenCentral()
+    maven { url 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    // Add other dependencies if Essentials needs them
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+publishing {
+    publications {
+        gpr(MavenPublication) {
+            from components.java
+            groupId = 'com.khaoskorps.minecraft.essentials'
+            artifactId = 'essentials'
+            version = project.version
+        }
+    }
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/KhaosKorps/Essentials')
+            credentials {
+                username = project.findProperty('gpr.user') ?: System.getenv('GITHUB_ACTOR')
+                password = project.findProperty('gpr.key') ?: System.getenv('GITHUB_TOKEN')
+            }
+        }
+    }
+}
+
+subprojects {
+    tasks.withType(Checkstyle).configureEach {
+        enabled = false
+    }
+    tasks.withType(Test).configureEach {
+        enabled = false
+    }
 }
