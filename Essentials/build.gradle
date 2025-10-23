@@ -110,9 +110,9 @@ publishing {
         gpr(MavenPublication) {
             from components.java
 
-            groupId = 'com.earth2me.essentials'
-            artifactId = 'essentials'
-            version = '1.0.2'
+            groupId = 'com.earth2me.essentials'  // must match what Towny depends on
+            artifactId = 'essentials'            // lowercase, consistent
+            version = '1.0.3'                    // bump version to avoid overwrite
 
             pom {
                 name = 'EssentialsX Fork'
@@ -132,5 +132,6 @@ publishing {
         }
     }
 }
+
 
 
