@@ -37,13 +37,20 @@ subprojects {
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    // ✅ Clean up any default Maven publications before defining our own
-    afterEvaluate {
-        if (plugins.hasPlugin('maven-publish')) {
-            def pubs = publishing.publications
-            pubs.removeIf { it.name == "maven" } // <—— This line deletes the default one
+    // ✅ Disable the default Maven publication creation entirely
+    plugins.withType(MavenPublishPlugin) {
+        // Remove the default 'maven' publication before it can conflict
+        project.afterEvaluate {
+            if (project.extensions.findByType(PublishingExtension)) {
+                project.extensions.getByType(PublishingExtension).publications.removeIf {
+                    it.name.equalsIgnoreCase("maven")
+                }
+            }
         }
+    }
 
+    // ✅ Define your own custom publication
+    afterEvaluate {
         publishing {
             publications {
                 create("gpr", MavenPublication) {
@@ -73,5 +80,3 @@ subprojects {
         }
     }
 }
-
-
