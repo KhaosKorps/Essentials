@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.5' // ✅ set global version for all modules
+version = '1.0.6' // ✅ set global version for all modules
 
 java {
     toolchain {
@@ -39,6 +39,15 @@ subprojects {
     tasks.withType(Test).configureEach { enabled = false }
 
     afterEvaluate {
+        if (plugins.hasPlugin('maven-publish')) {
+            def pubContainer = publishing.publications
+            def toRemove = pubContainer.findByName("maven")
+            if (toRemove != null) {
+                pubContainer.remove(toRemove)
+                println("Removed default 'maven' publication from ${project.name}")
+            }
+        }
+
         if (name in ["EssentialsX", "EssentialsXSpawn"]) {
             publishing {
                 publications {
