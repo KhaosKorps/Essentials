@@ -34,6 +34,13 @@ subprojects {
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
+    // 🧹 Remove Gradle’s auto-created 'maven' publication
+    afterEvaluate {
+        publishing {
+            publications.removeIf { it.name.equalsIgnoreCase("maven") }
+        }
+    }
+
     publishing {
         publications {
             gpr(MavenPublication) {
