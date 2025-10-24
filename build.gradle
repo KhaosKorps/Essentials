@@ -3,23 +3,9 @@ plugins {
     id 'maven-publish'
 }
 
-allprojects {
-    plugins.withType(MavenPublishPlugin) {
-        // Fully clear out any auto-created Maven publications before Gradle can use them
-        afterEvaluate {
-            def pubs = publishing.publications
-            def toRemove = pubs.findAll { it.name.equalsIgnoreCase("maven") }
-            if (!toRemove.isEmpty()) {
-                toRemove.each { pubs.remove(it) }
-                println "💣 Removed default 'maven' publication from ${project.name}"
-            }
-        }
-    }
-}
-
 group = 'com.khaoskorps.minecraft.essentials'
-def gitHash = 'git rev-parse --short HEAD'.execute().text.trim()
-version = "1.0.9-${gitHash}" // ✅ set global version for all modules
+//def gitHash = 'git rev-parse --short HEAD'.execute().text.trim()
+version = "1.0.10"//-${gitHash}" // ✅ set global version for all modules
 
 java {
     toolchain {
@@ -43,35 +29,19 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 subprojects {
-    // Remove any default Maven publication Gradle auto-creates
-    plugins.withType(MavenPublishPlugin) {
-        publishing {
-            publications.removeIf { it.name.equalsIgnoreCase("maven") }
-        }
-    }
-
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
     afterEvaluate {
-        if (plugins.hasPlugin('maven-publish')) {
-            def pubContainer = publishing.publications
-            def toRemove = pubContainer.findByName("maven")
-            if (toRemove != null) {
-                pubContainer.remove(toRemove)
-                println("Removed default 'maven' publication from ${project.name}")
-            }
-        }
-
         if (name in ["EssentialsX", "EssentialsXSpawn"]) {
             publishing {
                 publications {
                     create("gpr", MavenPublication) {
-                        from(components.findByName("java") ?: components.findByName("shadow"))
-                        suppressAllPomMetadataWarnings()
                         groupId = "com.khaoskorps.minecraft.essentials"
-                        artifactId = project.name.toLowerCase()
+                        artifactId = project.name.toLowerCase().replace("essentialsx", "essentialsx") // EssentialsX, EssentialsXSpawn, etc.
                         version = rootProject.version
+
+                        from(components.findByName("java") ?: components.findByName("shadow"))
 
                         pom {
                             name.set("EssentialsX Fork - ${project.name}")
@@ -89,15 +59,8 @@ subprojects {
                         }
                     }
                 }
-                tasks.withType(PublishToMavenRepository).configureEach {
-                    doLast {
-                        if (state.failure && state.failure.message?.contains("422")) {
-                            println("⚠️ Ignoring GitHub 422 (artifact already uploaded).")
-                            state.setOutcome(org.gradle.api.tasks.TaskOutcome.SUCCESS)
-                        }
-                    }
-                }
             }
+
         }
     }
 }
