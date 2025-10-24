@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.12'
+version = '1.0.13'
 
 java {
     toolchain {
@@ -27,16 +27,17 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 /**
- * ✅ Safe way to disable Gradle’s default “maven” publication in Gradle 8+
- * Instead of removing it directly, we prevent it from being realized or used.
+ * 🔒 Prevent Gradle’s automatic “maven” publication from ever being created.
+ * This must be applied safely before subproject publication configuration.
  */
-gradle.projectsEvaluated {
-    subprojects { sub ->
-        sub.plugins.withId('maven-publish') {
-            sub.extensions.configure(PublishingExtension) { pubExt ->
-                pubExt.publications.matching { it.name == "maven" }.all {
-                    sub.logger.lifecycle("Disabling default Maven publication for ${sub.name}")
-                    it.artifactId = "" // effectively neuter the default
+gradle.beforeProject { proj ->
+    proj.pluginManager.withPlugin('maven-publish') {
+        proj.afterEvaluate {
+            def pubExt = proj.extensions.findByType(PublishingExtension)
+            if (pubExt != null) {
+                pubExt.publications.matching { it.name == "maven" }.all { pub ->
+                    proj.logger.lifecycle("Removing auto-created Maven publication from ${proj.name}")
+                    pubExt.publications.remove(pub)
                 }
             }
         }
@@ -44,7 +45,7 @@ gradle.projectsEvaluated {
 }
 
 /**
- * Configure actual custom publication for all subprojects
+ * ✅ Configure the *only* allowed publication ("gpr") for all modules
  */
 subprojects {
     apply plugin: 'java'
@@ -58,7 +59,7 @@ subprojects {
             create("gpr", MavenPublication) {
                 from components.findByName("java")
                 groupId = "com.khaoskorps.minecraft.essentials"
-                artifactId = project.name.toLowerCase() // ensure lowercase for GitHub
+                artifactId = project.name.toLowerCase() // required for GitHub
                 version = rootProject.version
 
                 pom {
