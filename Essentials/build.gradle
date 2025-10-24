@@ -107,26 +107,22 @@ shadowJar {
 
 afterEvaluate {
     publishing {
-        publications {
-            // Remove any existing "maven" publication created by the shadow-module plugin
-            def existing = publications.findByName("maven")
-            if (existing != null) {
-                publications.remove(existing)
-            }
+        // Remove any default Maven publications created by the plugin
+        def defaults = publishing.publications.findAll { it.name.toLowerCase().contains("maven") }
+        defaults.each { publishing.publications.remove(it) }
 
-            create("gpr", MavenPublication) {
-                // Use the Shadow component if available, otherwise the Java one
-                def shadowComponent = components.findByName("shadow")
-                from(shadowComponent ?: components.java)
+        // ✅ Define your own publication (lowercase artifactId, correct version)
+        publications.create("gpr", MavenPublication) {
+            def shadowComponent = components.findByName("shadow")
+            from(shadowComponent ?: components.java)
 
-                groupId = "com.khaoskorps.minecraft.essentials"
-                artifactId = "essentialsx"   // must be lowercase
-                version = "1.0.1"
+            groupId = "com.khaoskorps.minecraft.essentials"
+            artifactId = "essentialsx"
+            version = "1.0.1"
 
-                pom {
-                    name.set("EssentialsX Fork")
-                    description.set("Custom EssentialsX fork for Towny integration")
-                }
+            pom {
+                name.set("EssentialsX Fork")
+                description.set("Custom EssentialsX fork for Towny integration")
             }
         }
 
@@ -142,6 +138,7 @@ afterEvaluate {
         }
     }
 }
+
 
 
 
