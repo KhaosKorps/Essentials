@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.4' // ✅ set global version for all modules
+version = '1.0.5' // ✅ set global version for all modules
 
 java {
     toolchain {
@@ -28,12 +28,14 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 subprojects {
-    tasks.withType(Checkstyle).configureEach { enabled = false }
-    tasks.withType(Test).configureEach { enabled = false }
+    // Remove any default Maven publication Gradle auto-creates
+    plugins.withType(MavenPublishPlugin) {
+        publishing {
+            publications.removeIf { it.name.equalsIgnoreCase("maven") }
+        }
+    }
 
-    // (plugins, group, etc.)
     afterEvaluate {
-        // Only publish EssentialsX and EssentialsXSpawn
         if (name in ["EssentialsX", "EssentialsXSpawn"]) {
             publishing {
                 publications {
@@ -49,7 +51,6 @@ subprojects {
                         }
                     }
                 }
-
                 repositories {
                     maven {
                         name = "GitHubPackages"
@@ -64,4 +65,5 @@ subprojects {
         }
     }
 }
+
 
