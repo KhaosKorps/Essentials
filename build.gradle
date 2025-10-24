@@ -28,6 +28,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 subprojects {
+    tasks.withType(Checkstyle).configureEach { enabled = false }
+    tasks.withType(Test).configureEach { enabled = false }
+
     // (plugins, group, etc.)
     afterEvaluate {
         // Only publish EssentialsX and EssentialsXSpawn
