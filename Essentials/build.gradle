@@ -118,7 +118,7 @@ afterEvaluate {
 
             groupId = "com.khaoskorps.minecraft.essentials"
             artifactId = "essentialsx"
-            version = "1.0.2"
+            version = "1.0.3"
 
             pom {
                 name.set("EssentialsX Fork")
@@ -130,10 +130,21 @@ afterEvaluate {
             maven {
                 name = "GitHubPackages"
                 url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
+                allowInsecureProtocol = false
                 credentials {
                     username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
                     password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
                 }
+                metadataSources {
+                    mavenPom()
+                    artifact()
+                }
+            }
+        }
+
+        tasks.withType(PublishToMavenRepository).configureEach {
+            doLast {
+                println "✅ Published ${publication.artifactId} ${publication.version} successfully!"
             }
         }
     }
