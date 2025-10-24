@@ -27,7 +27,6 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// Disable unnecessary checks/tests across all subprojects
 subprojects {
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
@@ -38,12 +37,14 @@ subprojects {
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    // ✅ each subproject publishes its own JAR with consistent group/version
-    publishing {
-        publications {
-            create("gpr", MavenPublication) {
+    // 🚫 Remove any default "maven" publications Gradle auto-created
+    afterEvaluate {
+        publishing {
+            publications.removeIf { it.name.toLowerCase().contains("maven") && it.name != "gpr" }
+
+            publications.create("gpr", MavenPublication) {
                 from(components.findByName("java") ?: components.findByName("shadow"))
-                artifactId = project.name.toLowerCase() // e.g. essentialsx, essentialsspawn
+                artifactId = project.name.toLowerCase()
                 groupId = group
                 version = version
 
@@ -52,16 +53,18 @@ subprojects {
                     description.set("Custom module ${project.name} of EssentialsX Fork")
                 }
             }
-        }
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
-                credentials {
-                    username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                    password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+
+            repositories {
+                maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
+                    credentials {
+                        username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                        password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+                    }
                 }
             }
         }
     }
 }
+
