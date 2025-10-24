@@ -27,17 +27,18 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 /**
- * 🔒 Prevent Gradle’s automatic “maven” publication from ever being created.
- * This must be applied safely before subproject publication configuration.
+ * 🔒 Remove Gradle’s default “maven” publication globally, even for nested provider subprojects.
+ * This runs after all projects are evaluated and guarantees clean state.
  */
-gradle.beforeProject { proj ->
-    proj.pluginManager.withPlugin('maven-publish') {
-        proj.afterEvaluate {
+gradle.projectsEvaluated {
+    allprojects { proj ->
+        proj.plugins.withId('maven-publish') {
             def pubExt = proj.extensions.findByType(PublishingExtension)
             if (pubExt != null) {
-                pubExt.publications.matching { it.name == "maven" }.all { pub ->
-                    proj.logger.lifecycle("Removing auto-created Maven publication from ${proj.name}")
-                    pubExt.publications.remove(pub)
+                def toRemove = pubExt.publications.findAll { it.name == 'maven' }
+                toRemove.each {
+                    proj.logger.lifecycle("Force-removing default Maven publication from ${proj.name}")
+                    pubExt.publications.remove(it)
                 }
             }
         }
@@ -45,7 +46,7 @@ gradle.beforeProject { proj ->
 }
 
 /**
- * ✅ Configure the *only* allowed publication ("gpr") for all modules
+ * ✅ Configure unified publication for all subprojects (providers and EssentialsX modules)
  */
 subprojects {
     apply plugin: 'java'
@@ -59,7 +60,7 @@ subprojects {
             create("gpr", MavenPublication) {
                 from components.findByName("java")
                 groupId = "com.khaoskorps.minecraft.essentials"
-                artifactId = project.name.toLowerCase() // required for GitHub
+                artifactId = project.name.toLowerCase()
                 version = rootProject.version
 
                 pom {
