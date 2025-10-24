@@ -27,59 +27,51 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 /**
- * 🔒 Remove Gradle’s default “maven” publication globally, even for nested provider subprojects.
- * This runs after all projects are evaluated and guarantees clean state.
- */
-gradle.projectsEvaluated {
-    allprojects { proj ->
-        proj.plugins.withId('maven-publish') {
-            def pubExt = proj.extensions.findByType(PublishingExtension)
-            if (pubExt != null) {
-                def toRemove = pubExt.publications.findAll { it.name == 'maven' }
-                toRemove.each {
-                    proj.logger.lifecycle("Force-removing default Maven publication from ${proj.name}")
-                    pubExt.publications.remove(it)
-                }
-            }
-        }
-    }
-}
-
-/**
- * ✅ Configure unified publication for all subprojects (providers and EssentialsX modules)
+ * ✅ Clean publishing setup:
+ * - Only publishes `:providers` submodules to GitHub Packages
+ * - Skips EssentialsX and any module using Indra or shadow plugins
  */
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'maven-publish'
 
+    // Disable noise
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    publishing {
-        publications {
-            create("gpr", MavenPublication) {
-                from components.findByName("java")
-                groupId = "com.khaoskorps.minecraft.essentials"
-                artifactId = project.name.toLowerCase()
-                version = rootProject.version
+    // 🔒 Only apply maven-publish for providers
+    if (project.path.startsWith(":providers")) {
+        apply plugin: 'maven-publish'
 
-                pom {
-                    name.set(project.name)
-                    description.set("EssentialsX submodule: ${project.name}")
-                    url.set("https://github.com/KhaosKorps/Essentials")
+        publishing {
+            publications {
+                create("gpr", MavenPublication) {
+                    from components.findByName("java")
+                    groupId = "com.khaoskorps.minecraft.essentials"
+                    artifactId = project.name.toLowerCase()
+                    version = rootProject.version
+
+                    pom {
+                        name.set(project.name)
+                        description.set("EssentialsX provider module: ${project.name}")
+                        url.set("https://github.com/KhaosKorps/Essentials")
+                    }
+                }
+            }
+
+            repositories {
+                maven {
+                    name = "GitHubPackages"
+                    url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
+                    credentials {
+                        username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                        password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+                    }
                 }
             }
         }
 
-        repositories {
-            maven {
-                name = "GitHubPackages"
-                url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
-                credentials {
-                    username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                    password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-                }
-            }
-        }
+        logger.lifecycle("📦 Configured publishing for ${project.name}")
+    } else {
+        logger.lifecycle("⏭️ Skipping ${project.name} (non-provider or Indra-based module)")
     }
 }
