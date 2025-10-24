@@ -27,9 +27,10 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 /**
- * ✅ Clean publishing setup:
- * - Only publishes provider subprojects
- * - Removes Gradle’s default "maven" publication before defining ours
+ * ✅ Publishing configuration:
+ * - Only provider subprojects are published
+ * - Force-disable Gradle’s automatic 'maven' publication creation
+ * - Adds only our 'gpr' publication for GitHub
  */
 subprojects {
     apply plugin: 'java'
@@ -37,37 +38,42 @@ subprojects {
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
+    // 🧱 Only apply publishing for providers
     if (project.path.startsWith(":providers")) {
         apply plugin: 'maven-publish'
 
-        afterEvaluate {
-            // 🧹 Remove Gradle's auto-created 'maven' publication
-            def pubExt = extensions.findByType(PublishingExtension)
-            if (pubExt != null) {
-                pubExt.publications.matching { it.name == "maven" }.all { pub ->
-                    logger.lifecycle("💣 Removing default 'maven' publication from ${project.name}")
-                    pubExt.publications.remove(pub)
-                }
+        // 🧨 Stop Gradle from auto-creating "maven" publication completely
+        tasks.withType(GenerateMavenPom).configureEach {
+            if (name.toLowerCase().contains("maven")) {
+                enabled = false
             }
+        }
 
-            // ✅ Add your GitHub Packages publication
-            publishing {
-                publications {
-                    create("gpr", MavenPublication) {
-                        from components.findByName("java")
-                        groupId = "com.khaoskorps.minecraft.essentials"
-                        artifactId = project.name.toLowerCase()
-                        version = rootProject.version
-
-                        pom {
-                            name.set(project.name)
-                            description.set("EssentialsX provider module: ${project.name}")
-                            url.set("https://github.com/KhaosKorps/Essentials")
-                        }
+        // 🧹 After Gradle evaluates project, ensure only one publication exists
+        afterEvaluate {
+            extensions.configure(PublishingExtension) { pubExt ->
+                pubExt.publications.configureEach { pub ->
+                    if (pub.name == "maven") {
+                        logger.lifecycle("Force removing 'maven' publication from ${project.name}")
+                        pubExt.publications.remove(pub)
                     }
                 }
 
-                repositories {
+                // ✅ Our clean GPR publication
+                pubExt.publications.create("gpr", MavenPublication) {
+                    from components.findByName("java")
+                    groupId = "com.khaoskorps.minecraft.essentials"
+                    artifactId = project.name.toLowerCase()
+                    version = rootProject.version
+
+                    pom {
+                        name.set(project.name)
+                        description.set("EssentialsX provider module: ${project.name}")
+                        url.set("https://github.com/KhaosKorps/Essentials")
+                    }
+                }
+
+                pubExt.repositories {
                     maven {
                         name = "GitHubPackages"
                         url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
@@ -80,8 +86,8 @@ subprojects {
             }
         }
 
-        logger.lifecycle("📦 Configured publishing for ${project.name}")
+        logger.lifecycle("Configured publishing for ${project.name}")
     } else {
-        logger.lifecycle("⏭️ Skipping ${project.name} (non-provider or Indra-based module)")
+        logger.lifecycle("Skipping ${project.name} (non-provider or Indra-based module)")
     }
 }
