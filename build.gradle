@@ -37,20 +37,26 @@ subprojects {
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    // 🚫 Remove any default "maven" publications Gradle auto-created
+    // ✅ Clean up any default Maven publications before defining our own
     afterEvaluate {
+        if (plugins.hasPlugin('maven-publish')) {
+            def pubs = publishing.publications
+            pubs.removeIf { it.name == "maven" } // <—— This line deletes the default one
+        }
+
         publishing {
-            publications.removeIf { it.name.toLowerCase().contains("maven") && it.name != "gpr" }
+            publications {
+                create("gpr", MavenPublication) {
+                    from(components.findByName("java") ?: components.findByName("shadow"))
 
-            publications.create("gpr", MavenPublication) {
-                from(components.findByName("java") ?: components.findByName("shadow"))
-                artifactId = project.name.toLowerCase()
-                groupId = group
-                version = version
+                    groupId = group
+                    artifactId = project.name.toLowerCase()
+                    version = version
 
-                pom {
-                    name.set("EssentialsX Fork - ${project.name}")
-                    description.set("Custom module ${project.name} of EssentialsX Fork")
+                    pom {
+                        name.set("EssentialsX Fork - ${project.name}")
+                        description.set("Custom module ${project.name} of EssentialsX Fork")
+                    }
                 }
             }
 
@@ -67,4 +73,5 @@ subprojects {
         }
     }
 }
+
 
