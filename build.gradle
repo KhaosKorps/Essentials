@@ -4,7 +4,15 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.17' // bump this to avoid 409s
+
+// 🔧 Auto-version using Git commit hash (e.g. 2.0.0-abc123)
+def gitHash = "unknown"
+try {
+    def proc = "git rev-parse --short HEAD".execute(null, rootDir)
+    proc.waitFor()
+    gitHash = proc.in.text.trim()
+} catch (ignored) {}
+version = "2.0.0-${gitHash}"
 
 java {
     toolchain {
@@ -15,7 +23,7 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url 'https://jitpack.io' }
+    maven { url = uri('https://jitpack.io') }
 }
 
 dependencies {
@@ -27,38 +35,28 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 /**
- * ✅ Configure unified publication for all subprojects (providers + Essentials modules)
- * Compatible with Indra (net.kyori.indra.publishing)
+ * ✅ Unified publishing config for all subprojects
+ * Disables Indra’s default 'maven' publication and pushes only to GitHub Packages.
  */
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'maven-publish'
 
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    // Skip logic build and others that don't produce JARs
-    if (project.name == "build-logic") {
-        logger.lifecycle("⏭️ Skipping build-logic")
-        return
-    }
-
+    // 🧹 Disable Indra’s auto 'maven' publication (if applied)
     plugins.withId("net.kyori.indra.publishing") {
-        logger.lifecycle("⚠️ Disabling Indra's default Maven publication in ${project.name}")
         afterEvaluate {
-            // Remove the auto-created maven publication if present
-            project.extensions.configure(PublishingExtension) { pubExt ->
-                pubExt.publications.removeIf { it.name == "maven" }
-            }
+            extensions.findByType(PublishingExtension)?.publications?.removeIf { it.name == "maven" }
         }
     }
 
-    apply plugin: 'maven-publish'
-
     publishing {
         publications {
-            register("gpr", MavenPublication) {
+            create("gpr", MavenPublication) {
                 from components.findByName("java")
-                groupId = "com.khaoskorps.minecraft.essentials"
+                groupId = rootProject.group
                 artifactId = project.name.toLowerCase()
                 version = rootProject.version
 
