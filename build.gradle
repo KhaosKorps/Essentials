@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.0'
+version = '1.0.3' // ✅ set global version for all modules
 
 java {
     toolchain {
@@ -21,18 +21,47 @@ repositories {
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
-    // Add other dependencies if Essentials needs them
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+// Disable unnecessary checks/tests across all subprojects
 subprojects {
-    tasks.withType(Checkstyle).configureEach {
-        enabled = false
-    }
-    tasks.withType(Test).configureEach {
-        enabled = false
+    apply plugin: 'java-library'
+    apply plugin: 'maven-publish'
+
+    group = rootProject.group
+    version = rootProject.version
+
+    tasks.withType(Checkstyle).configureEach { enabled = false }
+    tasks.withType(Test).configureEach { enabled = false }
+
+    // ✅ each subproject publishes its own JAR with consistent group/version
+    publishing {
+        publications {
+            create("gpr", MavenPublication) {
+                from(components.findByName("java") ?: components.findByName("shadow"))
+                artifactId = project.name.toLowerCase() // e.g. essentialsx, essentialsspawn
+                groupId = group
+                version = version
+
+                pom {
+                    name.set("EssentialsX Fork - ${project.name}")
+                    description.set("Custom module ${project.name} of EssentialsX Fork")
+                }
+            }
+        }
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
+                credentials {
+                    username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                    password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
     }
 }
