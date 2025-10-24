@@ -5,7 +5,7 @@ plugins {
 
 group = 'com.khaoskorps.minecraft.essentials'
 //def gitHash = 'git rev-parse --short HEAD'.execute().text.trim()
-version = "1.0.10"//-${gitHash}" // ✅ set global version for all modules
+version = "1.0.11"//-${gitHash}" // ✅ set global version for all modules
 
 java {
     toolchain {
@@ -17,7 +17,6 @@ java {
 repositories {
     mavenCentral()
     maven { url 'https://jitpack.io' }
-    maven { url 'https://repo.papermc.io/repository/maven-public/' }
 }
 
 dependencies {
@@ -29,40 +28,41 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 subprojects {
+    apply plugin: 'maven-publish'
+    apply plugin: 'java'
+
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    afterEvaluate {
-        if (name in ["EssentialsX", "EssentialsXSpawn"]) {
-            publishing {
-                publications {
-                    create("gpr", MavenPublication) {
-                        groupId = "com.khaoskorps.minecraft.essentials"
-                        artifactId = project.name.toLowerCase().replace("essentialsx", "essentialsx") // EssentialsX, EssentialsXSpawn, etc.
-                        version = rootProject.version
+    publishing {
+        publications {
+            gpr(MavenPublication) {
+                groupId = 'com.khaoskorps.minecraft.essentials'
+                artifactId = project.name
+                version = '1.0.10'
 
-                        from(components.findByName("java") ?: components.findByName("shadow"))
+                from components.findByName('java')
 
-                        pom {
-                            name.set("EssentialsX Fork - ${project.name}")
-                            description.set("Custom EssentialsX fork module: ${project.name}")
-                        }
-                    }
-                }
-                repositories {
-                    maven {
-                        name = "GitHubPackages"
-                        url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
-                        credentials {
-                            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
-                        }
-                    }
+                pom {
+                    name.set(project.name)
+                    description.set("EssentialsX submodule: ${project.name}")
+                    url.set('https://github.com/KhaosKorps/Essentials')
                 }
             }
+        }
 
+        repositories {
+            maven {
+                name = 'GitHubPackages'
+                url = uri('https://maven.pkg.github.com/KhaosKorps/Essentials')
+                credentials {
+                    username = System.getenv('GITHUB_ACTOR')
+                    password = System.getenv('GITHUB_TOKEN')
+                }
+            }
         }
     }
 }
+
 
 
