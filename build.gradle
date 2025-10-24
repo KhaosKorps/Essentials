@@ -31,15 +31,27 @@ subprojects {
     apply plugin: 'maven-publish'
     apply plugin: 'java'
 
-    tasks.withType(Checkstyle).configureEach { enabled = false }
-    tasks.withType(Test).configureEach { enabled = false }
+    // Disable Gradle's automatic 'maven' publication
+    publishing {
+        // Prevent the default publication from being created
+        tasks.withType(GenerateMavenPom).configureEach { onlyIf { it.name.contains("gpr") } }
+    }
 
-    // 🧹 Remove Gradle’s auto-created 'maven' publication
+    // Alternatively, fully override default publications
     afterEvaluate {
         publishing {
-            publications.removeIf { it.name.equalsIgnoreCase("maven") }
+            publications.configureEach {
+                if (it.name == "maven") {
+                    // remove or disable Gradle’s auto one
+                    project.logger.lifecycle("Removing default Maven publication from ${project.name}")
+                    publishing.publications.remove(it)
+                }
+            }
         }
     }
+
+    tasks.withType(Checkstyle).configureEach { enabled = false }
+    tasks.withType(Test).configureEach { enabled = false }
 
     publishing {
         publications {
@@ -47,7 +59,6 @@ subprojects {
                 groupId = 'com.khaoskorps.minecraft.essentials'
                 artifactId = project.name
                 version = '1.0.10'
-
                 from components.findByName('java')
 
                 pom {
@@ -69,6 +80,7 @@ subprojects {
             }
         }
     }
+}
 }
 
 
