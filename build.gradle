@@ -27,18 +27,16 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 /**
- * Remove Gradle’s auto-created “maven” publication from all subprojects.
- * This avoids duplicate coordinate conflicts (e.g., BaseProviders vs baseproviders).
+ * ✅ Safe way to disable Gradle’s default “maven” publication in Gradle 8+
+ * Instead of removing it directly, we prevent it from being realized or used.
  */
-subprojects {
-    afterEvaluate {
-        if (plugins.hasPlugin('maven-publish')) {
-            publishing {
-                publications.configureEach {
-                    if (it.name == "maven") {
-                        project.logger.lifecycle("Removing default Maven publication from ${project.name}")
-                        publications.remove(it)
-                    }
+gradle.projectsEvaluated {
+    subprojects { sub ->
+        sub.plugins.withId('maven-publish') {
+            sub.extensions.configure(PublishingExtension) { pubExt ->
+                pubExt.publications.matching { it.name == "maven" }.all {
+                    sub.logger.lifecycle("Disabling default Maven publication for ${sub.name}")
+                    it.artifactId = "" // effectively neuter the default
                 }
             }
         }
@@ -46,7 +44,7 @@ subprojects {
 }
 
 /**
- * Configure publishing for every module (providers and EssentialsX variants).
+ * Configure actual custom publication for all subprojects
  */
 subprojects {
     apply plugin: 'java'
@@ -60,7 +58,7 @@ subprojects {
             create("gpr", MavenPublication) {
                 from components.findByName("java")
                 groupId = "com.khaoskorps.minecraft.essentials"
-                artifactId = project.name.toLowerCase()  // enforce lowercase for GitHub Packages
+                artifactId = project.name.toLowerCase() // ensure lowercase for GitHub
                 version = rootProject.version
 
                 pom {
