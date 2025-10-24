@@ -18,7 +18,7 @@ allprojects {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.6' // ✅ set global version for all modules
+version = '1.0.7' // ✅ set global version for all modules
 
 java {
     toolchain {
