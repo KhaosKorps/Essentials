@@ -3,6 +3,20 @@ plugins {
     id 'maven-publish'
 }
 
+allprojects {
+    plugins.withType(MavenPublishPlugin) {
+        // Fully clear out any auto-created Maven publications before Gradle can use them
+        afterEvaluate {
+            def pubs = publishing.publications
+            def toRemove = pubs.findAll { it.name.equalsIgnoreCase("maven") }
+            if (!toRemove.isEmpty()) {
+                toRemove.each { pubs.remove(it) }
+                println "💣 Removed default 'maven' publication from ${project.name}"
+            }
+        }
+    }
+}
+
 group = 'com.khaoskorps.minecraft.essentials'
 version = '1.0.6' // ✅ set global version for all modules
 
