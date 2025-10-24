@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.15'
+version = '1.0.17' // bump this to avoid 409s
 
 java {
     toolchain {
@@ -27,8 +27,8 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 /**
- * ✅ Publish only provider modules to GitHub Packages
- *    (no removal or afterEvaluate hacks)
+ * ✅ Configure unified publication for all subprojects (providers + Essentials modules)
+ * Compatible with Indra (net.kyori.indra.publishing)
  */
 subprojects {
     apply plugin: 'java'
@@ -36,16 +36,26 @@ subprojects {
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    if (!project.path.startsWith(":providers")) {
-        logger.lifecycle("⏭️  Skipping ${project.name} (not a provider)")
+    // Skip logic build and others that don't produce JARs
+    if (project.name == "build-logic") {
+        logger.lifecycle("⏭️ Skipping build-logic")
         return
+    }
+
+    plugins.withId("net.kyori.indra.publishing") {
+        logger.lifecycle("⚠️ Disabling Indra's default Maven publication in ${project.name}")
+        afterEvaluate {
+            // Remove the auto-created maven publication if present
+            project.extensions.configure(PublishingExtension) { pubExt ->
+                pubExt.publications.removeIf { it.name == "maven" }
+            }
+        }
     }
 
     apply plugin: 'maven-publish'
 
     publishing {
         publications {
-            // Gradle will reuse if already exists, avoiding duplication
             register("gpr", MavenPublication) {
                 from components.findByName("java")
                 groupId = "com.khaoskorps.minecraft.essentials"
@@ -54,7 +64,7 @@ subprojects {
 
                 pom {
                     name.set(project.name)
-                    description.set("EssentialsX provider module: ${project.name}")
+                    description.set("EssentialsX module: ${project.name}")
                     url.set("https://github.com/KhaosKorps/Essentials")
                 }
             }
@@ -71,6 +81,4 @@ subprojects {
             }
         }
     }
-
-    logger.lifecycle("📦  Publishing enabled for ${project.name}")
 }
