@@ -4,7 +4,7 @@ plugins {
     id("java")
     id("net.kyori.indra")
     id("net.kyori.indra.checkstyle")
-    id("net.kyori.indra.publishing")
+    //id("net.kyori.indra.publishing")
 }
 
 val baseExtension = extensions.create<EssentialsBaseExtension>("essentials", project)
