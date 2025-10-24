@@ -4,8 +4,7 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-//def gitHash = 'git rev-parse --short HEAD'.execute().text.trim()
-version = "1.0.11"//-${gitHash}" // ✅ set global version for all modules
+version = '1.0.11'
 
 java {
     toolchain {
@@ -34,25 +33,38 @@ subprojects {
     tasks.withType(Checkstyle).configureEach { enabled = false }
     tasks.withType(Test).configureEach { enabled = false }
 
-    // Completely override Gradle's default publication
+    // ✅ Skip publishing entirely for internal provider modules
+    if (project.path.startsWith(":providers")) {
+        project.logger.lifecycle("Skipping publish setup for ${project.name}")
+        return
+    }
+
+    // ✅ Configure publishing for public modules (e.g., EssentialsX, Spawn, etc.)
     publishing {
         publications {
-            // Wipe default publication safely
-            withType(MavenPublication).configureEach {
-                // force consistent coordinates
-                groupId = 'com.khaoskorps.minecraft.essentials'
-                version = rootProject.version
-            }
-
-            // Define the *only* publication we care about
             create("gpr", MavenPublication) {
                 from components.findByName("java")
+                groupId = "com.khaoskorps.minecraft.essentials"
                 artifactId = project.name
+                version = rootProject.version
 
                 pom {
                     name.set(project.name)
                     description.set("EssentialsX submodule: ${project.name}")
                     url.set("https://github.com/KhaosKorps/Essentials")
+
+                    // 🚫 Strip internal project dependencies from generated POM
+                    withXml {
+                        def deps = asNode().dependencies
+                        deps?.dependency?.removeAll { dep ->
+                            def aid = dep.artifactId.text()
+                            aid == "BaseProviders" ||
+                                    aid == "PaperProvider" ||
+                                    aid == "NMSReflectionProvider" ||
+                                    aid == "1_8Provider" ||
+                                    aid == "1_12Provider"
+                        }
+                    }
                 }
             }
         }
@@ -69,7 +81,4 @@ subprojects {
         }
     }
 }
-
-
-
 
