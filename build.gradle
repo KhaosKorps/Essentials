@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.3' // ✅ set global version for all modules
+version = '1.0.4' // ✅ set global version for all modules
 
 java {
     toolchain {
