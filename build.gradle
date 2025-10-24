@@ -18,7 +18,8 @@ allprojects {
 }
 
 group = 'com.khaoskorps.minecraft.essentials'
-version = '1.0.7' // ✅ set global version for all modules
+def gitHash = 'git rev-parse --short HEAD'.execute().text.trim()
+version = "1.0.8-${gitHash}" // ✅ set global version for all modules
 
 java {
     toolchain {
