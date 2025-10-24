@@ -45,7 +45,7 @@ subprojects {
             create("gpr", MavenPublication) {
                 from components.findByName("java")
                 groupId = "com.khaoskorps.minecraft.essentials"
-                artifactId = project.name
+                artifactId = project.name.toLowerCase()
                 version = rootProject.version
 
                 pom {
