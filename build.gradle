@@ -28,55 +28,37 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 subprojects {
-    apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
-
-    group = rootProject.group
-    version = rootProject.version
-
-    tasks.withType(Checkstyle).configureEach { enabled = false }
-    tasks.withType(Test).configureEach { enabled = false }
-
-    // ✅ Disable the default Maven publication creation entirely
-    plugins.withType(MavenPublishPlugin) {
-        // Remove the default 'maven' publication before it can conflict
-        project.afterEvaluate {
-            if (project.extensions.findByType(PublishingExtension)) {
-                project.extensions.getByType(PublishingExtension).publications.removeIf {
-                    it.name.equalsIgnoreCase("maven")
-                }
-            }
-        }
-    }
-
-    // ✅ Define your own custom publication
+    // (plugins, group, etc.)
     afterEvaluate {
-        publishing {
-            publications {
-                create("gpr", MavenPublication) {
-                    from(components.findByName("java") ?: components.findByName("shadow"))
+        // Only publish EssentialsX and EssentialsXSpawn
+        if (name in ["EssentialsX", "EssentialsXSpawn"]) {
+            publishing {
+                publications {
+                    create("gpr", MavenPublication) {
+                        from(components.findByName("java") ?: components.findByName("shadow"))
+                        groupId = "com.khaoskorps.minecraft.essentials"
+                        artifactId = project.name.toLowerCase()
+                        version = rootProject.version
 
-                    groupId = group
-                    artifactId = project.name.toLowerCase()
-                    version = version
-
-                    pom {
-                        name.set("EssentialsX Fork - ${project.name}")
-                        description.set("Custom module ${project.name} of EssentialsX Fork")
+                        pom {
+                            name.set("EssentialsX Fork - ${project.name}")
+                            description.set("Custom EssentialsX fork module: ${project.name}")
+                        }
                     }
                 }
-            }
 
-            repositories {
-                maven {
-                    name = "GitHubPackages"
-                    url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
-                    credentials {
-                        username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                        password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+                repositories {
+                    maven {
+                        name = "GitHubPackages"
+                        url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
+                        credentials {
+                            username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                            password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+                        }
                     }
                 }
             }
         }
     }
 }
+
