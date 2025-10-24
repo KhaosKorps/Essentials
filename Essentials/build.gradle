@@ -105,33 +105,44 @@ shadowJar {
     }
 }
 
-publishing {
-    publications {
-        create("gpr", MavenPublication) {
-            from components.java
+afterEvaluate {
+    publishing {
+        publications {
+            // Remove any existing "maven" publication created by the shadow-module plugin
+            def existing = publications.findByName("maven")
+            if (existing != null) {
+                publications.remove(existing)
+            }
 
-            groupId = "com.khaoskorps.minecraft.essentials"
-            artifactId = "essentialsx"   // ✅ lowercase — GitHub requires this
-            version = "1.0.1"            // ✅ bump version if reuploading
+            create("gpr", MavenPublication) {
+                // Use the Shadow component if available, otherwise the Java one
+                def shadowComponent = components.findByName("shadow")
+                from(shadowComponent ?: components.java)
 
-            pom {
-                name = "EssentialsX Fork"
-                description = "Custom EssentialsX fork for Towny integration"
+                groupId = "com.khaoskorps.minecraft.essentials"
+                artifactId = "essentialsx"   // must be lowercase
+                version = "1.0.1"
+
+                pom {
+                    name.set("EssentialsX Fork")
+                    description.set("Custom EssentialsX fork for Towny integration")
+                }
             }
         }
-    }
 
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
-                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/KhaosKorps/Essentials")
+                credentials {
+                    username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                    password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+                }
             }
         }
     }
 }
+
 
 
 
