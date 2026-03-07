@@ -1,3 +1,8 @@
+# Claude / Klaude - Never commit AI configuration
+CLAUDE.md
+.claude/
+.klaude/
+
 # Other IDE files
 *.classpath
 *.project
@@ -33,3 +38,10 @@ test-tmp/
 
 # Run directory
 /run/
+
+# Security — never commit secrets
+.env
+.env.*
+*.pem
+*.key
+credentials.json
